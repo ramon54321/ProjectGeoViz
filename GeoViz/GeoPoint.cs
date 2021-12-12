@@ -14,6 +14,7 @@ namespace GeoViz
     public float x;
     public float y;
     public readonly HashSet<GeoTriangle<T>> triangles = new();
+    public readonly HashSet<GeoLine<T>> lines = new();
     public GeoPoint(float x, float y, T payload)
     {
       this.x = x;

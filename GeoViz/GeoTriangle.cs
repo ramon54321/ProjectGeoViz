@@ -73,12 +73,29 @@ namespace GeoViz
 
     public void UpdateLinesPoints()
     {
+      ab.a.lines.Remove(ab);
       ab.a = a;
+      ab.a.lines.Add(ab);
+      
+      ab.b.lines.Remove(ab);
       ab.b = b;
+      ab.b.lines.Add(ab);
+      
+      bc.a.lines.Remove(bc);
       bc.a = b;
+      bc.a.lines.Add(bc);
+      
+      bc.b.lines.Remove(bc);
       bc.b = c;
+      bc.b.lines.Add(bc);
+      
+      ca.a.lines.Remove(ca);
       ca.a = c;
+      ca.a.lines.Add(ca);
+      
+      ca.b.lines.Remove(ca);
       ca.b = a;
+      ca.b.lines.Add(ca);
     }
 
     private GeoPoint<T> _circumcenter;
@@ -86,8 +103,11 @@ namespace GeoViz
 
     public void DisconnectPoints()
     {
+      a.lines.Clear();
       a.triangles.Remove(this);
+      b.lines.Clear();
       b.triangles.Remove(this);
+      c.lines.Clear();
       c.triangles.Remove(this);
     }
 

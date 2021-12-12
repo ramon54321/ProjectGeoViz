@@ -18,6 +18,31 @@ namespace GeoViz
       if (val == 0) return 0;
       return val > 0 ? 1 : -1; 
     }
+    
+    public static bool DoesIntersectExcludeEndpointsAndCollinear<A, B>(GeoLine<A> a, GeoLine<B> b)
+    {
+      var vA0 = a.a;
+      var vA1 = a.b;
+      var vB0 = b.a;
+      var vB1 = b.b;
+      var denominator = (vA1.x - vA0.x) * (vB1.y - vB0.y) - (vA1.y - vA0.y) * (vB1.x - vB0.x);
+      if (denominator == 0) return false;
+      var numerator = (vA0.y - vB0.y) * (vB1.x - vB0.x) - (vA0.x - vB0.x) * (vB1.y - vB0.y);
+      var r = numerator / denominator;
+      var numerator2 = (vA0.y - vB0.y) * (vA1.x - vA0.x) - ((vA0.x - vB0.x) * (vA1.y - vA0.y));
+      var s = numerator2 / denominator;
+      if (r <= 0 || r >= 1 || s <= 0 || s >= 1) return false;
+      return true;
+    }
+    
+    public static bool DoesIntersectExcludeEndpointsAndCollinear<A, B>(GeoLine<A> a, IEnumerable<GeoLine<B>> bs)
+    {
+      foreach (var geoLine in bs)
+      {
+        if (DoesIntersectExcludeEndpointsAndCollinear(a, geoLine)) return true;
+      }
+      return false;
+    }
 
     public static bool DoesIntersect<A, B>(GeoLine<A> a, GeoLine<B> b)
     {
@@ -38,6 +63,15 @@ namespace GeoViz
       if (o3 == 0 && IsOnEdge(vB0, vB1, vA0)) return true;
       if (o4 == 0 && IsOnEdge(vB0, vB1, vA1)) return true;
  
+      return false;
+    }
+    
+    public static bool DoesIntersect<A, B>(GeoLine<A> a, IEnumerable<GeoLine<B>> bs)
+    {
+      foreach (var geoLine in bs)
+      {
+        if (DoesIntersect(a, geoLine)) return true;
+      }
       return false;
     }
     
@@ -149,6 +183,18 @@ namespace GeoViz
       foreach (var geoPoint in geoPointsSuperTriangle)
       {
         triangulation.RemoveWhere(t => t.ContainsPoint(geoPoint));
+      }
+      
+      foreach (var geoTriangle in triangulation)
+      {
+        geoTriangle.a.lines.Clear();
+        geoTriangle.b.lines.Clear();
+        geoTriangle.c.lines.Clear();
+      }
+      foreach (var geoLine in triangulation.SelectMany(t => t.Lines))
+      {
+        geoLine.a.lines.Add(geoLine);
+        geoLine.b.lines.Add(geoLine);
       }
       
       return triangulation;

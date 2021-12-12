@@ -5,11 +5,16 @@
     public T payload;
     public GeoPoint<T> a;
     public GeoPoint<T> b;
-    public GeoLine(GeoPoint<T> a, GeoPoint<T> b, T payload)
+    public GeoLine(GeoPoint<T> a, GeoPoint<T> b, T payload, bool isGhost = false)
     {
       this.a = a;
       this.b = b;
       this.payload = payload;
+      if (!isGhost)
+      {
+        this.a.lines.Add(this);
+        this.b.lines.Add(this);
+      }
     }
 
     public GeoLine<T> Clone()

@@ -15,6 +15,23 @@ namespace GeoViz
       }
     }
 
+    public void UpdateLines()
+    {
+      foreach (var geoTriangle in Triangles)
+      {
+        geoTriangle.a.lines.Clear();
+        geoTriangle.b.lines.Clear();
+        geoTriangle.c.lines.Clear();
+      }
+      Lines.Clear();
+      foreach (var geoLine in Triangles.SelectMany(t => t.Lines))
+      {
+        geoLine.a.lines.Add(geoLine);
+        geoLine.b.lines.Add(geoLine);
+        Lines.Add(geoLine);
+      }
+    }
+
     public HashSet<GeoPoint<T>> Points { get; set; } = new();
     public HashSet<GeoLine<T>> Lines { get; set; } = new();
     public HashSet<GeoTriangle<T>> Triangles { get; set; } = new();
@@ -60,7 +77,6 @@ namespace GeoViz
       }
 
       var floodBoundaryLines = Geometry.FindTrianglesBoundaryEdges(testedTriangles).ToArray();
-      Console.WriteLine(floodBoundaryLines.Length);
       if (floodBoundaryLines.All(l => borderLines.Contains(l))) return testedTriangles;
       return untestedTriangles;
     }
