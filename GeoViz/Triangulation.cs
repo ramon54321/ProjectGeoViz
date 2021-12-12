@@ -14,8 +14,6 @@ namespace GeoViz
         pathfindingLineKind = PathfindingLineKind.Boundary
     };
 
-    private IEnumerable<GeoPoint<CollisionBlock>> _pathPoints;
-
     public void Start()
     {
       Cursor.Hide();
@@ -46,18 +44,21 @@ namespace GeoViz
       var collidableBorders = new List<List<GeoPoint<CollisionBlock>>> { borderA, borderB, borderC };
       
       var collisionMesh = Collision.CollisionGeoMeshFromBorders(collidableBorders);
-      _geoMeshes.Add(collisionMesh);
+      _geoMeshes.Add(collisionMesh.Clone());
       _pathPoints = Pathfinding.GetPath(collisionMesh, new GeoPoint(-4, 2), new GeoPoint(6, 6));
       
-      _pathLines = new List<GeoLine<CollisionBlock>>();
+      _pathLines = new List<GeoLine<int>>();
       var pathPoints = _pathPoints.ToArray();
       for (var i = 0; i < pathPoints.Length - 1; i++)
       {
-        _pathLines.Add(new GeoLine<CollisionBlock>(pathPoints[i], pathPoints[i+1], default, true));
+        _pathLines.Add(new GeoLine<int>(pathPoints[i], pathPoints[i+1], default, true));
       }
     }
 
-    private List<GeoLine<CollisionBlock>> _pathLines;
+    private IEnumerable<GeoPoint> _pathPoints;
+    private List<GeoLine<int>> _pathLines;
+
+    private GeoPoint _point = new(7, 7);
 
     private GeoPoint<CollisionBlock> _selectedPoint = null;
     public void Render(Surface s)
@@ -100,9 +101,11 @@ namespace GeoViz
       foreach (var pathPoint in _pathPoints)
       {
         s.DrawDot(Brushes.Gold, pathPoint, 5);
-        s.DrawText(Brushes.Gold, pathPoint + new GeoPoint<CollisionBlock>(0.2f, -0.2f, default), $"{i}");
+        s.DrawText(Brushes.Gold, pathPoint + new GeoPoint(0.2f, -0.2f), $"{i}");
         i++;
       }
+      
+      s.DrawDot(Brushes.Magenta, _point, 5);
       
       foreach (var geoLine in _pathLines)
       {

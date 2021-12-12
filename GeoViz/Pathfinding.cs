@@ -12,12 +12,13 @@ namespace GeoViz
 
   public class Pathfinding
   {
-    public static IEnumerable<GeoPoint<CollisionBlock>> GetPath(GeoMesh<CollisionBlock> collisionMesh, GeoPoint start, GeoPoint goal)
+    public static IEnumerable<GeoPoint> GetPath(GeoMesh<CollisionBlock> collisionMesh, GeoPoint start, GeoPoint goal)
     {
-      var startGeoPoint = collisionMesh.Points.First(p => p.Equals(start));
-      var goalGeoPoint = collisionMesh.Points.First(p => p.Equals(goal));
+      var collisionGeoMeshClone = collisionMesh.Clone();
+      var startGeoPoint = collisionGeoMeshClone.Points.First(p => p.Equals(start));
+      var goalGeoPoint = collisionGeoMeshClone.Points.First(p => p.Equals(goal));
       var path = GetPath(startGeoPoint, goalGeoPoint);
-      return SimplifyPath(path, collisionMesh);
+      return SimplifyPath(path, collisionGeoMeshClone);
     }
     
     private static IEnumerable<GeoPoint<CollisionBlock>> GetPath(GeoPoint<CollisionBlock> start, GeoPoint<CollisionBlock> goal)
@@ -54,7 +55,7 @@ namespace GeoViz
       return new List<GeoPoint<CollisionBlock>>();
     }
     
-    private static IEnumerable<GeoPoint<CollisionBlock>> SimplifyPath(IEnumerable<GeoPoint<CollisionBlock>> pathPoints, GeoMesh<CollisionBlock> collisionMesh)
+    private static IEnumerable<GeoPoint> SimplifyPath(IEnumerable<GeoPoint<CollisionBlock>> pathPoints, GeoMesh<CollisionBlock> collisionMesh)
     {
       var collisionBoundary = collisionMesh.Lines.Where(l => l.payload.pathfindingLineKind == PathfindingLineKind.Boundary).ToList();
       var collisionInternal = collisionMesh.Lines.Where(l => l.payload.pathfindingLineKind == PathfindingLineKind.Internal).ToList();
@@ -80,7 +81,7 @@ namespace GeoViz
           }
         }
       }
-      return simplifiedPathPoints;
+      return simplifiedPathPoints.Select(p => new GeoPoint(p.x, p.y));
     }
     
     private static List<GeoPoint<CollisionBlock>> ReconstructPath(Dictionary<GeoPoint<CollisionBlock>, GeoPoint<CollisionBlock>> cameFrom, GeoPoint<CollisionBlock> current)
