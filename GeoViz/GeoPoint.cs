@@ -59,9 +59,16 @@ namespace GeoViz
     
     public override bool Equals(object obj)
     {
-      if (obj is not GeoPoint<T> geoPoint) return false;
       const float tolerance = 0.001f;
-      return Math.Abs(geoPoint.x - x) < tolerance && Math.Abs(geoPoint.y - y) < tolerance;
+      if (obj is GeoPoint<T> geoPointA)
+      {
+        return Math.Abs(geoPointA.x - x) < tolerance && Math.Abs(geoPointA.y - y) < tolerance;
+      }
+      if (obj is GeoPoint geoPointB)
+      {
+        return Math.Abs(geoPointB.x - x) < tolerance && Math.Abs(geoPointB.y - y) < tolerance;
+      }
+      return false;
     }
 
     public override int GetHashCode()
