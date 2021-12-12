@@ -10,7 +10,7 @@ namespace GeoViz
 
   public class GeoPoint<T>
   {
-    public T payload;
+    public readonly T payload;
     public float x;
     public float y;
     public readonly HashSet<GeoTriangle<T>> triangles = new();
@@ -58,13 +58,9 @@ namespace GeoViz
     
     public override bool Equals(object obj)
     {
-      if (obj == null) return false;
-      if (obj is GeoPoint<T> geoPoint)
-      {
-        const float tolerance = 0.001f;
-        return Math.Abs(geoPoint.x - x) < tolerance && Math.Abs(geoPoint.y - y) < tolerance;
-      }
-      return false;
+      if (obj is not GeoPoint<T> geoPoint) return false;
+      const float tolerance = 0.001f;
+      return Math.Abs(geoPoint.x - x) < tolerance && Math.Abs(geoPoint.y - y) < tolerance;
     }
 
     public override int GetHashCode()

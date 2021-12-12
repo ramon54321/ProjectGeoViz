@@ -18,7 +18,9 @@ namespace GeoViz
     public HashSet<GeoPoint<T>> Points { get; set; } = new();
     public HashSet<GeoLine<T>> Lines { get; set; } = new();
     public HashSet<GeoTriangle<T>> Triangles { get; set; } = new();
-
+    
+    public IEnumerable<GeoLine<T>> LinesInternal => Lines.Where(l => Triangles.SelectMany(t => new[] { t.ab, t.bc, t.ca }).Count(tl => tl.Equals(l)) > 1);
+    
     public IEnumerable<GeoTriangle<T>> GetContainingTriangles(IEnumerable<GeoPoint<T>> boundaryGeoPoints)
     {
       var boundaryGeoPointsArray = boundaryGeoPoints.ToArray();
@@ -61,17 +63,8 @@ namespace GeoViz
       Console.WriteLine(floodBoundaryLines.Length);
       if (floodBoundaryLines.All(l => borderLines.Contains(l))) return testedTriangles;
       return untestedTriangles;
-
-
-
-
-      // if (!boundaryLines.Any()) return Triangles.Where(t => !untestedTriangles.Contains(t));
-      // if (boundaryLines.All(l => borderLines.Contains(l))) return untestedTriangles;
-      // return Triangles.Where(t => !untestedTriangles.Contains(t));
     }
     
-    public IEnumerable<GeoLine<T>> LinesInternal => Lines.Where(l => Triangles.SelectMany(t => new[] { t.ab, t.bc, t.ca }).Count(tl => tl.Equals(l)) > 1);
-
     public void AddTriangle(GeoTriangle<T> geoTriangle)
     {
       var existsPointA = Points.Contains(geoTriangle.a);
@@ -91,8 +84,9 @@ namespace GeoViz
       Triangles.Add(geoTriangle);
     }
 
-    public bool ExistsTriangle(GeoPoint<T> a, GeoPoint<T> b, GeoPoint<T> c)
+    private bool ExistsTriangle(GeoPoint<T> a, GeoPoint<T> b, GeoPoint<T> c)
     {
+      // TODO: Create triangle equals()
       foreach (var g in Triangles)
       {
         if (g.a.Equals(a) && g.b.Equals(b) && g.c.Equals(c)) return true;

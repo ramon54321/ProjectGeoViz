@@ -1,14 +1,5 @@
 ﻿namespace GeoViz
 {
-  // public class GeoLine<T> : GeoLine
-  // {
-  //   public T payload;
-  //   public GeoLine(GeoPoint a, GeoPoint b, T payload) : base(a, b)
-  //   {
-  //     this.payload = payload;
-  //   }
-  // }
-  
   public class GeoLine<T>
   {
     public T payload;

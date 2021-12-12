@@ -41,28 +41,29 @@ namespace GeoViz
       return false;
     }
     
-    // public static bool DoesIntersect(GeoPolygon a, GeoPolygon b)
-    // {
-    //   foreach (var aLine in a.lines)
-    //   {
-    //     foreach (var bLine in b.lines)
-    //     {
-    //       if (DoesIntersect(aLine, bLine)) return true;
-    //     }
-    //   }
-    //   return false;
-    // }
-    //
-    // public static bool DoesIntersect(List<GeoPolygon> polygons, GeoPolygon a)
-    // {
-    //   foreach (var polygon in polygons)
-    //   {
-    //     if (DoesIntersect(polygon, a)) return true;
-    //   }
-    //   return false;
-    // }
+    public static bool DoesIntersect<T>(GeoTriangle<T> a, GeoTriangle<T> b)
+    {
+      foreach (var aLine in a.Lines)
+      {
+        foreach (var bLine in b.Lines)
+        {
+          if (DoesIntersect(aLine, bLine)) return true;
+        }
+      }
+      return false;
+    }
     
-    public static GeoPoint<A> Rotate<A>(GeoPoint<A> a, float angle) {
+    public static bool DoesIntersect<T>(List<GeoTriangle<T>> polygons, GeoTriangle<T> a)
+    {
+      foreach (var polygon in polygons)
+      {
+        if (DoesIntersect(polygon, a)) return true;
+      }
+      return false;
+    }
+    
+    public static GeoPoint<A> Rotate<A>(GeoPoint<A> a, float angle)
+    {
       return new GeoPoint<A>(
         a.x * MathF.Cos(angle) - a.y * MathF.Sin(angle),
         a.x * MathF.Sin(angle) + a.y * MathF.Cos(angle),

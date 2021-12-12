@@ -19,19 +19,11 @@ namespace GeoViz
   
   public class Triangulation : IRenderable
   {
-    private List<GeoMesh<CollisionBlock>> _geoMeshes = new();
+    private readonly List<GeoMesh<CollisionBlock>> _geoMeshes = new();
 
-    public static CollisionBlock collisionBlockInternal = new()
-    {
-        pathfindingLineKind = PathfindingLineKind.Internal
-    };
-    public static CollisionBlock collisionBlockBoundary = new()
+    private static CollisionBlock collisionBlockBoundary = new()
     {
         pathfindingLineKind = PathfindingLineKind.Boundary
-    };
-    public static CollisionBlock collisionBlockConnection = new()
-    {
-        pathfindingLineKind = PathfindingLineKind.Connection
     };
     
     public void Start()
@@ -99,30 +91,8 @@ namespace GeoViz
         geoLine.payload.pathfindingLineKind = PathfindingLineKind.Connection;
       }
 
-
-      // var merge = Geometry.Merge(bGeoMesh, cGeoMesh);
-
-      // _geoMeshes.Add(aGeoMeshFlooded);
-      // _geoMeshes.Add(cGeoMeshFlooded);
-      // _geoMeshes.Add(bGeoMesh);
-      // _geoMeshes.Add(cGeoMesh);
-      //
       var mergedGeoMesh = Geometry.Merge(Geometry.Merge(aGeoMeshFlooded, Geometry.Merge(bGeoMeshFlooded, cGeoMeshFlooded)), allGeoMesh);
-      
       _geoMeshes.Add(mergedGeoMesh);
-
-
-      // var floodMesh = new GeoMesh<CollisionBlock>(cGeoMesh.GetContainingTriangles(new List<GeoPoint<CollisionBlock>>
-      // {
-      //     new(-4, 4, collisionBlockBoundary),
-      //     new(-2, 4, collisionBlockBoundary),
-      //     new(-2, 3, collisionBlockBoundary),
-      //     new(-3, 3, collisionBlockBoundary),
-      //     new(-3, 2, collisionBlockBoundary),
-      //     new(-4, 2, collisionBlockBoundary),
-      // }));
-      // _geoMeshes.Add(floodMesh);
-
     }
     private GeoPoint<CollisionBlock> _selectedPoint = null;
     public void Render(Surface s)
