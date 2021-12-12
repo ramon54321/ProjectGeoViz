@@ -12,36 +12,52 @@ namespace GeoViz
 
   public class Pathfinding
   {
-    public static IEnumerable<GeoPoint> GetPath(GeoMesh<CollisionBlock> collisionMesh, GeoPoint start, GeoPoint goal)
+    public static List<GeoPoint> GetPath(GeoMesh collisionMesh, GeoPoint start, GeoPoint goal)
     {
-      var collisionGeoMeshClone = collisionMesh.Clone();
-      var startGeoPoint = collisionGeoMeshClone.Points.First(p => p.Equals(start));
-      var goalGeoPoint = collisionGeoMeshClone.Points.First(p => p.Equals(goal));
-      var path = GetPath(startGeoPoint, goalGeoPoint);
-      return SimplifyPath(path, collisionGeoMeshClone);
+      var collisionMeshClone = collisionMesh.Clone();
+      var startClone = start.Clone();
+      var goalClone = goal.Clone();
+      
+      var closestPointToStart = collisionMeshClone.Points.OrderBy(p => Geometry.Distance(startClone, p)).First();
+      var closestPointToGoal = collisionMeshClone.Points.OrderBy(p => Geometry.Distance(goalClone, p)).First();
+      collisionMeshClone.Points.Add(startClone);
+      collisionMeshClone.Points.Add(goalClone);
+      collisionMeshClone.Lines.Add(new GeoLine(startClone, closestPointToStart, new CollisionBlock
+      {
+          pathfindingLineKind = PathfindingLineKind.Connection,
+          weight = 0
+      }));
+      collisionMeshClone.Lines.Add(new GeoLine(goalClone, closestPointToGoal, new CollisionBlock
+      {
+          pathfindingLineKind = PathfindingLineKind.Connection,
+          weight = 0
+      }));
+
+      var path = GetPath(startClone, goalClone);
+      return SimplifyPath(path, collisionMeshClone);
     }
     
-    private static IEnumerable<GeoPoint<CollisionBlock>> GetPath(GeoPoint<CollisionBlock> start, GeoPoint<CollisionBlock> goal)
+    private static List<GeoPoint> GetPath(GeoPoint start, GeoPoint goal)
     {
-      var openSet = new HashSet<GeoPoint<CollisionBlock>> { start };
-      var cameFrom = new Dictionary<GeoPoint<CollisionBlock>, GeoPoint<CollisionBlock>>();
+      var openSet = new HashSet<GeoPoint> { start };
+      var cameFrom = new Dictionary<GeoPoint, GeoPoint>();
 
-      var gScore = new Dictionary<GeoPoint<CollisionBlock>, float>();
+      var gScore = new Dictionary<GeoPoint, float>();
       gScore[start] = 0f;
 
-      var fScore = new Dictionary<GeoPoint<CollisionBlock>, float>();
+      var fScore = new Dictionary<GeoPoint, float>();
       fScore[start] = Heuristic(start, goal);
 
       while (openSet.Any())
       {
         var current = openSet.OrderBy(p => fScore[p]).First();
         
-        if (ReferenceEquals(current, goal)) return ReconstructPath(cameFrom, current);
+        if (Equals(current, goal)) return ReconstructPath(cameFrom, current).Select(p => p.Clone()).ToList();
 
         openSet.Remove(current);
         foreach (var currentLine in current.lines.Where(l => l.payload.pathfindingLineKind != PathfindingLineKind.Internal))
         {
-          var neighbor = ReferenceEquals(currentLine.a, current) ? currentLine.b : currentLine.a;
+          var neighbor = Equals(currentLine.a, current) ? currentLine.b : currentLine.a;
           var tentativeGScore = gScore.GetValueOrDefault(current, float.PositiveInfinity) + currentLine.payload.weight;
           if (tentativeGScore < gScore.GetValueOrDefault(neighbor, float.PositiveInfinity))
           {
@@ -52,15 +68,15 @@ namespace GeoViz
           }
         }
       }
-      return new List<GeoPoint<CollisionBlock>>();
+      return new List<GeoPoint>();
     }
     
-    private static IEnumerable<GeoPoint> SimplifyPath(IEnumerable<GeoPoint<CollisionBlock>> pathPoints, GeoMesh<CollisionBlock> collisionMesh)
+    private static List<GeoPoint> SimplifyPath(IEnumerable<GeoPoint> pathPoints, GeoMesh collisionMesh)
     {
       var collisionBoundary = collisionMesh.Lines.Where(l => l.payload.pathfindingLineKind == PathfindingLineKind.Boundary).ToList();
       var collisionInternal = collisionMesh.Lines.Where(l => l.payload.pathfindingLineKind == PathfindingLineKind.Internal).ToList();
       
-      var simplifiedPathPoints = new List<GeoPoint<CollisionBlock>>();
+      var simplifiedPathPoints = new List<GeoPoint>();
       var originalPathPoints = pathPoints.ToArray();
 
       var i = 0;
@@ -73,7 +89,7 @@ namespace GeoViz
         for (var c = originalPathPoints.Length - 1; c > i; c--)
         {
           var checkPoint = originalPathPoints[c];
-          var checkLine = new GeoLine<CollisionBlock>(currentPoint, checkPoint, default, true);
+          var checkLine = new GeoLine(currentPoint, checkPoint, default, true);
           var lineOfSight = !Geometry.DoesIntersectExcludeEndpointsAndCollinear(checkLine, collisionBoundary) && !Geometry.DoesIntersect(checkLine, collisionInternal);
           if (lineOfSight)
           {
@@ -81,12 +97,12 @@ namespace GeoViz
           }
         }
       }
-      return simplifiedPathPoints.Select(p => new GeoPoint(p.x, p.y));
+      return simplifiedPathPoints;
     }
     
-    private static List<GeoPoint<CollisionBlock>> ReconstructPath(Dictionary<GeoPoint<CollisionBlock>, GeoPoint<CollisionBlock>> cameFrom, GeoPoint<CollisionBlock> current)
+    private static List<GeoPoint> ReconstructPath(Dictionary<GeoPoint, GeoPoint> cameFrom, GeoPoint current)
     {
-      var path = new List<GeoPoint<CollisionBlock>> { current };
+      var path = new List<GeoPoint> { current };
       while (cameFrom.ContainsKey(current))
       {
         current = cameFrom[current];
@@ -96,7 +112,7 @@ namespace GeoViz
       return path;
     }
     
-    private static float Heuristic(GeoPoint<CollisionBlock> current, GeoPoint<CollisionBlock> goal)
+    private static float Heuristic(GeoPoint current, GeoPoint goal)
     {
       return Geometry.Distance(current, goal);
     }

@@ -2,19 +2,19 @@
 
 namespace GeoViz
 {
-  public class GeoTriangle<T>
+  public class GeoTriangle
   {
-    public GeoPoint<T> a;
-    public GeoPoint<T> b;
-    public GeoPoint<T> c;
+    public GeoPoint a;
+    public GeoPoint b;
+    public GeoPoint c;
 
-    public readonly GeoLine<T> ab;
-    public readonly GeoLine<T> bc;
-    public readonly GeoLine<T> ca;
+    public readonly GeoLine ab;
+    public readonly GeoLine bc;
+    public readonly GeoLine ca;
 
-    public IEnumerable<GeoLine<T>> Lines => new[] { ab, bc, ca };
+    public IEnumerable<GeoLine> Lines => new[] { ab, bc, ca };
 
-    public GeoTriangle(GeoPoint<T> a, GeoPoint<T> b, GeoPoint<T> c)
+    public GeoTriangle(GeoPoint a, GeoPoint b, GeoPoint c)
     {
       if (!IsCounterClockwise(a, b, c))
       {
@@ -29,9 +29,9 @@ namespace GeoViz
         this.c = c;
       }
       
-      ab = new GeoLine<T>(this.a, this.b, a.payload);
-      bc = new GeoLine<T>(this.b, this.c, b.payload);
-      ca = new GeoLine<T>(this.c, this.a, c.payload);
+      ab = new GeoLine(this.a, this.b, a.payload);
+      bc = new GeoLine(this.b, this.c, b.payload);
+      ca = new GeoLine(this.c, this.a, c.payload);
       this.a.triangles.Add(this);
       this.b.triangles.Add(this);
       this.c.triangles.Add(this);
@@ -41,12 +41,12 @@ namespace GeoViz
 
     private GeoTriangle
     (
-      GeoPoint<T> a,
-      GeoPoint<T> b,
-      GeoPoint<T> c,
-      GeoLine<T> ab,
-      GeoLine<T> bc,
-      GeoLine<T> ca
+      GeoPoint a,
+      GeoPoint b,
+      GeoPoint c,
+      GeoLine ab,
+      GeoLine bc,
+      GeoLine ca
     )
     {
       this.a = a;
@@ -60,15 +60,15 @@ namespace GeoViz
       this.c.triangles.Add(this);
     }
 
-    public GeoTriangle<T> Clone()
+    public GeoTriangle Clone()
     {
-      var na = a.Clone();
-      var nb = b.Clone();
-      var nc = c.Clone();
-      var nab = new GeoLine<T>(na, nb, ab.payload);
-      var nbc = new GeoLine<T>(nb, nc, bc.payload);
-      var nca = new GeoLine<T>(nc, na, ca.payload);
-      return new GeoTriangle<T>(a, b, c, nab, nbc, nca);
+      var na = a;
+      var nb = b;
+      var nc = c;
+      var nab = new GeoLine(na, nb, ab.payload);
+      var nbc = new GeoLine(nb, nc, bc.payload);
+      var nca = new GeoLine(nc, na, ca.payload);
+      return new GeoTriangle(a, b, c, nab, nbc, nca);
     }
 
     public void UpdateLinesPoints()
@@ -98,7 +98,7 @@ namespace GeoViz
       ca.b.lines.Add(ca);
     }
 
-    private GeoPoint<T> _circumcenter;
+    private GeoPoint _circumcenter;
     private float _radiusSquared;
 
     public void DisconnectPoints()
@@ -125,24 +125,24 @@ namespace GeoViz
 
       if (div == 0) return;
 
-      var center = new GeoPoint<T>(aux1 / div, aux2 / div, default);
+      var center = new GeoPoint(aux1 / div, aux2 / div, default);
       _circumcenter = center;
       _radiusSquared = (center.x - a.x) * (center.x - a.x) + (center.y - a.y) * (center.y - a.y);
     }
     
-    public bool IsPointInsideCircumcircle<A>(GeoPoint<A> geoPoint)
+    public bool IsPointInsideCircumcircle(GeoPoint geoPoint)
     {
       var dSquared = (geoPoint.x - _circumcenter.x) * (geoPoint.x - _circumcenter.x) +
                      (geoPoint.y - _circumcenter.y) * (geoPoint.y - _circumcenter.y);
       return dSquared < _radiusSquared;
     }
     
-    public bool ContainsPoint<A>(GeoPoint<A> geoPoint)
+    public bool ContainsPoint(GeoPoint geoPoint)
     {
       return a.Equals(geoPoint) || b.Equals(geoPoint) || c.Equals(geoPoint);
     }
     
-    private static bool IsCounterClockwise(GeoPoint<T> point1, GeoPoint<T> point2, GeoPoint<T> point3)
+    private static bool IsCounterClockwise(GeoPoint point1, GeoPoint point2, GeoPoint point3)
     {
       var result = (point2.x - point1.x) * (point3.y - point1.y) -
                    (point3.x - point1.x) * (point2.y - point1.y);

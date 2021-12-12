@@ -134,7 +134,7 @@ namespace GeoViz
     public bool MouseDown { get; }
     public bool MouseHold { get; }
 
-    public void DrawLine<A, B>(Pen pen, GeoPoint<A> a, GeoPoint<B> b)
+    public void DrawLine(Pen pen, GeoPoint a, GeoPoint b)
     {
       DrawLine(pen, GeoToCanvas(a), GeoToCanvas(b));
     }
@@ -144,7 +144,7 @@ namespace GeoViz
       _graphics.DrawLine(pen, a, b);
     }
     
-    public void DrawDot<A>(Brush brush, GeoPoint<A> a, float radius = 4f)
+    public void DrawDot(Brush brush, GeoPoint a, float radius = 4f)
     {
       DrawDot(brush, GeoToCanvas(a), radius);
     }
@@ -154,7 +154,7 @@ namespace GeoViz
       _graphics.FillEllipse(brush, a.X - radius, a.Y - radius, radius * 2, radius * 2);
     }
     
-    public void DrawTriangle<A>(Brush brush, GeoTriangle<A> geoTriangle)
+    public void DrawTriangle(Brush brush, GeoTriangle geoTriangle)
     {
       _graphics.FillPolygon(brush, new []
       {
@@ -164,7 +164,7 @@ namespace GeoViz
       });
     }
     
-    public void DrawText<A>(Brush brush, GeoPoint<A> geoPoint, string text)
+    public void DrawText(Brush brush, GeoPoint geoPoint, string text)
     {
       DrawText(brush, GeoToCanvas(geoPoint), text);
     }
@@ -177,14 +177,14 @@ namespace GeoViz
       _graphics.DrawString(text, SystemFonts.DefaultFont, brush, point, stringFormat);
     }
 
-    public Point GeoToCanvas<A>(GeoPoint<A> geoPoint)
+    public Point GeoToCanvas(GeoPoint geoPoint)
     {
       return new Point((int)((geoPoint.x - _logicMinX) * _spanPxX), (int)((geoPoint.y - _logicMinY) * _spanPxY));
     }
     
-    public GeoPoint<int> CanvasToGeo(Point point)
+    public GeoPoint CanvasToGeo(Point point)
     {
-      return new GeoPoint<int>((float)point.X / _spanPxX + _logicMinX, (float)point.Y / _spanPxY + _logicMinY, 0);
+      return new GeoPoint((float)point.X / _spanPxX + _logicMinX, (float)point.Y / _spanPxY + _logicMinY);
     }
   }
 }

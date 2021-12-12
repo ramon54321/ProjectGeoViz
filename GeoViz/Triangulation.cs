@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -7,7 +8,7 @@ namespace GeoViz
 {
   public class Triangulation : IRenderable
   {
-    private readonly List<GeoMesh<CollisionBlock>> _geoMeshes = new();
+    private readonly List<GeoMesh> _geoMeshes = new();
 
     private static CollisionBlock collisionBlockBoundary = new()
     {
@@ -18,21 +19,21 @@ namespace GeoViz
     {
       Cursor.Hide();
       
-      var borderA = new List<GeoPoint<CollisionBlock>>
+      var borderA = new List<GeoPoint>
       {
           new(0, 0, collisionBlockBoundary),
           new(1, 0, collisionBlockBoundary),
           new(1, 1, collisionBlockBoundary),
           new(0, 1, collisionBlockBoundary),
       };
-      var borderB = new List<GeoPoint<CollisionBlock>>
+      var borderB = new List<GeoPoint>
       {
           new(5, 5, collisionBlockBoundary),
           new(6, 5, collisionBlockBoundary),
           new(6, 6, collisionBlockBoundary),
           new(5, 6, collisionBlockBoundary),
       };
-      var borderC = new List<GeoPoint<CollisionBlock>>
+      var borderC = new List<GeoPoint>
       {
           new(-4, 4, collisionBlockBoundary),
           new(-2, 4, collisionBlockBoundary),
@@ -41,86 +42,88 @@ namespace GeoViz
           new(-3, 2, collisionBlockBoundary),
           new(-4, 2, collisionBlockBoundary),
       };
-      var collidableBorders = new List<List<GeoPoint<CollisionBlock>>> { borderA, borderB, borderC };
+      var collidableBorders = new List<List<GeoPoint>> { borderA, borderB, borderC };
       
-      var collisionMesh = Collision.CollisionGeoMeshFromBorders(collidableBorders);
-      _geoMeshes.Add(collisionMesh.Clone());
-      _pathPoints = Pathfinding.GetPath(collisionMesh, new GeoPoint(-4, 2), new GeoPoint(6, 6));
+      _collisionMesh = Collision.CollisionGeoMeshFromBorders(collidableBorders);
+      _geoMeshes.Add(_collisionMesh);
       
-      _pathLines = new List<GeoLine<int>>();
+      UpdatePath();
+    }
+
+    private void UpdatePath()
+    {
+      _pathPoints = Pathfinding.GetPath(_collisionMesh, _startPoint, _goalPoint);
+      _pathLines = new List<GeoLine>();
       var pathPoints = _pathPoints.ToArray();
       for (var i = 0; i < pathPoints.Length - 1; i++)
       {
-        _pathLines.Add(new GeoLine<int>(pathPoints[i], pathPoints[i+1], default, true));
+        _pathLines.Add(new GeoLine(pathPoints[i], pathPoints[i+1], default, true));
       }
     }
 
+    private GeoPoint _startPoint = new GeoPoint(-1, 2);
+    private GeoPoint _goalPoint = new GeoPoint(3, 2);
+
+    private GeoMesh _collisionMesh;
     private IEnumerable<GeoPoint> _pathPoints;
-    private List<GeoLine<int>> _pathLines;
-
-    private GeoPoint _point = new(7, 7);
-
-    private GeoPoint<CollisionBlock> _selectedPoint = null;
+    private List<GeoLine> _pathLines;
+    private GeoPoint _selectedPoint = null;
+    
     public void Render(Surface s)
     {
       var mouseGeoPoint = s.CanvasToGeo(s.MousePosition);
       
       if (s.MouseDown)
       {
-        _selectedPoint = _geoMeshes.SelectMany(m => m.Points).OrderBy(p => Geometry.Distance(mouseGeoPoint, p)).First();
+        // var pointsByDistance = _geoMeshes.SelectMany(m => m.Points).OrderBy(p => Geometry.Distance(mouseGeoPoint, p)).ToList();
+        // if (pointsByDistance.Any()) _selectedPoint = pointsByDistance.First();
+        if (Geometry.Distance(mouseGeoPoint, _startPoint) < Geometry.Distance(mouseGeoPoint, _goalPoint))
+        {
+          _selectedPoint = _startPoint;
+        }
+        else
+        {
+          _selectedPoint = _goalPoint;
+        }
       }
       if (s.MouseUp)
       {
         _selectedPoint = null;
       }
-
       if (_selectedPoint != null)
       {
         _selectedPoint.x = mouseGeoPoint.x;
         _selectedPoint.y = mouseGeoPoint.y;
+        UpdatePath();
       }
-      
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(0, 0), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(1, 1), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(2, 2), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(3, 3), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(4, 4), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(5, 5), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(6, 6), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(7, 7), 1);
-      s.DrawDot(Brushes.DarkSlateGray, new GeoPoint(8, 8), 1);
 
       foreach (var geoMesh in _geoMeshes)
       {
         DrawMesh(s, geoMesh);
       }
-      
-      s.DrawDot(Brushes.Chartreuse, s.MousePosition);
 
-      var i = 0;
-      foreach (var pathPoint in _pathPoints)
+      if (_pathPoints != null)
       {
-        s.DrawDot(Brushes.Gold, pathPoint, 5);
-        s.DrawText(Brushes.Gold, pathPoint + new GeoPoint(0.2f, -0.2f), $"{i}");
-        i++;
+        var i = 0;
+        foreach (var pathPoint in _pathPoints)
+        {
+          s.DrawDot(Brushes.Gold, pathPoint, 5);
+          s.DrawText(Brushes.Gold, pathPoint + new GeoPoint(0.2f, -0.2f), $"{i}");
+          i++;
+        }
+      }
+      if (_pathLines != null)
+      {
+        foreach (var geoLine in _pathLines)
+        {
+          s.DrawLine(Pens.Gold, geoLine.a, geoLine.b);
+        }
       }
       
-      s.DrawDot(Brushes.Magenta, _point, 5);
-      
-      foreach (var geoLine in _pathLines)
-      {
-        s.DrawLine(Pens.Gold, geoLine.a, geoLine.b);
-      }
-
-      // var triLines = _cTriangulation.SelectMany(t => t.a.lines.Concat(t.b.lines).Concat(t.c.lines)).ToArray();
-      // foreach (var geoLine in triLines)
-      // {
-      //   s.DrawLine(Pens.SpringGreen, geoLine.a, geoLine.b);
-      // }
-      // s.DrawText(Brushes.Chartreuse, new Point(300, 300), $"Lines: {triLines.Length}");
+      s.DrawDot(Brushes.Chartreuse, s.MousePosition, 2);
     }
 
-    private void DrawMesh(Surface s, GeoMesh<CollisionBlock> geoMesh)
+    private void DrawMesh(Surface s, GeoMesh geoMesh)
     {
       foreach (var geoMeshTriangle in geoMesh.Triangles)
       {
@@ -142,21 +145,21 @@ namespace GeoViz
       {
         s.DrawDot(Brushes.Aquamarine, geoMeshPoint);
       }
-      var linesUnique = new HashSet<GeoLine<CollisionBlock>>();
+      var linesUnique = new HashSet<GeoLine>();
       foreach (var geoLine in geoMesh.Points.SelectMany(p => p.lines))
       {
         linesUnique.Add(geoLine);
       }
       s.DrawText(Brushes.Gold, new GeoPoint(-1, -1), $"Points: {geoMesh.Points.Count}\nLines: {geoMesh.Lines.Count}/{linesUnique.Count}\nTriangles: {geoMesh.Triangles.Count}");
-      if (_selectedPoint != null)
-      {
-        foreach (var geoLine in _selectedPoint.lines)
-        {
-          var color = geoLine.payload.pathfindingLineKind == PathfindingLineKind.Internal ? Pens.DeepSkyBlue : geoLine.payload.pathfindingLineKind == PathfindingLineKind.Boundary ? Pens.Chocolate : Pens.LightGreen;
-          s.DrawLine(color, geoLine.a, geoLine.b);
-          // s.DrawLine(Pens.Cyan, geoLine.a, geoLine.b);
-        }
-      }
+      // if (_selectedPoint != null)
+      // {
+      //   foreach (var geoLine in _selectedPoint.lines)
+      //   {
+      //     var color = geoLine.payload.pathfindingLineKind == PathfindingLineKind.Internal ? Pens.DeepSkyBlue : geoLine.payload.pathfindingLineKind == PathfindingLineKind.Boundary ? Pens.Chocolate : Pens.LightGreen;
+      //     s.DrawLine(color, geoLine.a, geoLine.b);
+      //     // s.DrawLine(Pens.Cyan, geoLine.a, geoLine.b);
+      //   }
+      // }
     }
   }
 }

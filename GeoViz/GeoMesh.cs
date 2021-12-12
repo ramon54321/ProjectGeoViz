@@ -4,10 +4,10 @@ using System.Linq;
 
 namespace GeoViz
 {
-  public class GeoMesh<T>
+  public class GeoMesh
   {
     public GeoMesh() {}
-    public GeoMesh(IEnumerable<GeoTriangle<T>> geoTriangles)
+    public GeoMesh(IEnumerable<GeoTriangle> geoTriangles)
     {
       foreach (var geoTriangle in geoTriangles)
       {
@@ -15,45 +15,56 @@ namespace GeoViz
       }
     }
 
-    public void UpdateLines()
+    public void UpdatePointsLines()
     {
+      // Clear all points line references
       foreach (var geoTriangle in Triangles)
       {
         geoTriangle.a.lines.Clear();
         geoTriangle.b.lines.Clear();
         geoTriangle.c.lines.Clear();
       }
-      Lines.Clear();
-      foreach (var geoLine in Triangles.SelectMany(t => t.Lines))
+
+      // Foreach point in mesh, add line references to lines in mesh containing point
+      foreach (var geoPoint in Points)
       {
-        geoLine.a.lines.Add(geoLine);
-        geoLine.b.lines.Add(geoLine);
-        Lines.Add(geoLine);
+        foreach (var geoLine in Lines.Where(l => ReferenceEquals(l.a, geoPoint) || ReferenceEquals(l.b, geoPoint)))
+        {
+          geoPoint.lines.Add(geoLine);
+        }
       }
+      
+      // Lines.Clear();
+      // foreach (var geoLine in Triangles.SelectMany(t => t.Lines))
+      // {
+      //   geoLine.a.lines.Add(geoLine);
+      //   geoLine.b.lines.Add(geoLine);
+      //   Lines.Add(geoLine);
+      // }
     }
 
-    public HashSet<GeoPoint<T>> Points { get; set; } = new();
-    public HashSet<GeoLine<T>> Lines { get; set; } = new();
-    public HashSet<GeoTriangle<T>> Triangles { get; set; } = new();
+    public HashSet<GeoPoint> Points { get; set; } = new();
+    public HashSet<GeoLine> Lines { get; set; } = new();
+    public HashSet<GeoTriangle> Triangles { get; set; } = new();
     
-    public IEnumerable<GeoLine<T>> LinesInternal => Lines.Where(l => Triangles.SelectMany(t => new[] { t.ab, t.bc, t.ca }).Count(tl => tl.Equals(l)) > 1);
+    public IEnumerable<GeoLine> LinesInternal => Lines.Where(l => Triangles.SelectMany(t => new[] { t.ab, t.bc, t.ca }).Count(tl => tl.Equals(l)) > 1);
     
-    public IEnumerable<GeoTriangle<T>> GetContainingTriangles(IEnumerable<GeoPoint<T>> boundaryGeoPoints)
+    public IEnumerable<GeoTriangle> GetContainingTriangles(IEnumerable<GeoPoint> boundaryGeoPoints)
     {
       var boundaryGeoPointsArray = boundaryGeoPoints.ToArray();
-      var borderLines = new List<GeoLine<T>>();
+      var borderLines = new List<GeoLine>();
       for (var i = 0; i < boundaryGeoPointsArray.Length; i++)
       {
         var currentGeoPoint = boundaryGeoPointsArray[i];
         var nextGeoPoint = i == boundaryGeoPointsArray.Length - 1 ? boundaryGeoPointsArray[0] : boundaryGeoPointsArray[i + 1];
-        borderLines.Add(Lines.First(l => l.Equals(new GeoLine<T>(currentGeoPoint, nextGeoPoint, default))));
+        borderLines.Add(Lines.First(l => l.Equals(new GeoLine(currentGeoPoint, nextGeoPoint, default))));
       }
 
       var internalLines = LinesInternal.ToHashSet();
 
       var untestedTriangles = Triangles.ToHashSet();
-      var trianglesToTest = new Stack<GeoTriangle<T>>();
-      var testedTriangles = new HashSet<GeoTriangle<T>>();
+      var trianglesToTest = new Stack<GeoTriangle>();
+      var testedTriangles = new HashSet<GeoTriangle>();
       
       var firstTriangle = Triangles.First();
       
@@ -81,7 +92,7 @@ namespace GeoViz
       return untestedTriangles;
     }
     
-    public void AddTriangle(GeoTriangle<T> geoTriangle)
+    public void AddTriangle(GeoTriangle geoTriangle)
     {
       var existsPointA = Points.Contains(geoTriangle.a);
       var existsPointB = Points.Contains(geoTriangle.b);
@@ -100,7 +111,7 @@ namespace GeoViz
       Triangles.Add(geoTriangle);
     }
 
-    private bool ExistsTriangle(GeoPoint<T> a, GeoPoint<T> b, GeoPoint<T> c)
+    private bool ExistsTriangle(GeoPoint a, GeoPoint b, GeoPoint c)
     {
       // TODO: Create triangle equals()
       foreach (var g in Triangles)
@@ -115,13 +126,14 @@ namespace GeoViz
       return false;
     }
 
-    public GeoMesh<T> Clone()
+    public GeoMesh Clone()
     {
-      var geoMesh = new GeoMesh<T>();
+      var geoMesh = new GeoMesh();
       foreach (var geoTriangle in Triangles)
       {
         geoMesh.AddTriangle(geoTriangle.Clone());
       }
+      geoMesh.UpdatePointsLines();
       return geoMesh;
     }
   }

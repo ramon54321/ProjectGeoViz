@@ -11,7 +11,7 @@ namespace GeoViz
 
   public static class Collision
   {
-    public static GeoMesh<CollisionBlock> CollisionGeoMeshFromBorders(IEnumerable<IEnumerable<GeoPoint<CollisionBlock>>> collidableBorders)
+    public static GeoMesh CollisionGeoMeshFromBorders(IEnumerable<IEnumerable<GeoPoint>> collidableBorders)
     {
       var collidableBordersArray = collidableBorders.ToArray();
       var triangulations = collidableBordersArray.Select(Geometry.Triangulate);
@@ -19,32 +19,32 @@ namespace GeoViz
       var allPoints = collidableBordersArray.SelectMany(border => border);
       var allPointsTriangulation = Geometry.Triangulate(allPoints);
 
-      var geoMeshes = triangulations.Select(triangulation => new GeoMesh<CollisionBlock>(triangulation)).ToArray();
+      var geoMeshes = triangulations.Select(triangulation => new GeoMesh(triangulation)).ToArray();
       var geoMeshesFlooded = geoMeshes.Select((mesh, i) =>
       {
         var points = collidableBordersArray[i];
         var geoMesh = geoMeshes[i];
-        var geoMeshFlooded = new GeoMesh<CollisionBlock>(geoMesh.GetContainingTriangles(points));
+        var geoMeshFlooded = new GeoMesh(geoMesh.GetContainingTriangles(points));
         foreach (var geoLine in geoMeshFlooded.LinesInternal)
         {
           geoLine.payload.pathfindingLineKind = PathfindingLineKind.Internal;
         }
         return geoMeshFlooded;
-      });
+      }).ToArray();
       
-      var allPointsGeoMesh = new GeoMesh<CollisionBlock>(allPointsTriangulation);
+      var allPointsGeoMesh = new GeoMesh(allPointsTriangulation);
       foreach (var geoLine in allPointsGeoMesh.Lines)
       {
         geoLine.payload.pathfindingLineKind = PathfindingLineKind.Connection;
       }
 
-      var mergedGeoMesh = new GeoMesh<CollisionBlock>();
+      var mergedGeoMesh = new GeoMesh();
       foreach (var geoMeshFlooded in geoMeshesFlooded)
       {
         mergedGeoMesh = Geometry.Merge(mergedGeoMesh, geoMeshFlooded);
       }
       mergedGeoMesh = Geometry.Merge(mergedGeoMesh, allPointsGeoMesh);
-      mergedGeoMesh.UpdateLines();
+      mergedGeoMesh.UpdatePointsLines();
       
       foreach (var geoLine in mergedGeoMesh.Lines)
       {

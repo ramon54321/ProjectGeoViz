@@ -6,20 +6,20 @@ namespace GeoViz
 {
   public static class Geometry
   {
-    public static bool IsOnEdge<A, B, C>(GeoPoint<A> a, GeoPoint<B> b, GeoPoint<C> p)
+    public static bool IsOnEdge(GeoPoint a, GeoPoint b, GeoPoint p)
     {
       return b.x <= MathF.Max(p.x, a.x) && b.x >= MathF.Min(p.x, a.x) &&
              b.y <= MathF.Max(p.y, a.y) && b.y >= MathF.Min(p.y, a.y);
     }
 
-    public static int Orientation<A, B, C>(GeoPoint<A> a, GeoPoint<B> b, GeoPoint<C> r)
+    public static int Orientation(GeoPoint a, GeoPoint b, GeoPoint r)
     {
       var val = (b.y - a.y) * (r.x - b.x) - (b.x - a.x) * (r.y - b.y);
       if (val == 0) return 0;
       return val > 0 ? 1 : -1; 
     }
     
-    public static bool DoesIntersectExcludeEndpointsAndCollinear<A, B>(GeoLine<A> a, GeoLine<B> b)
+    public static bool DoesIntersectExcludeEndpointsAndCollinear(GeoLine a, GeoLine b)
     {
       var vA0 = a.a;
       var vA1 = a.b;
@@ -35,7 +35,7 @@ namespace GeoViz
       return true;
     }
     
-    public static bool DoesIntersectExcludeEndpointsAndCollinear<A, B>(GeoLine<A> a, IEnumerable<GeoLine<B>> bs)
+    public static bool DoesIntersectExcludeEndpointsAndCollinear(GeoLine a, IEnumerable<GeoLine> bs)
     {
       foreach (var geoLine in bs)
       {
@@ -44,7 +44,7 @@ namespace GeoViz
       return false;
     }
 
-    public static bool DoesIntersect<A, B>(GeoLine<A> a, GeoLine<B> b)
+    public static bool DoesIntersect(GeoLine a, GeoLine b)
     {
       var vA0 = a.a;
       var vA1 = a.b;
@@ -66,7 +66,7 @@ namespace GeoViz
       return false;
     }
     
-    public static bool DoesIntersect<A, B>(GeoLine<A> a, IEnumerable<GeoLine<B>> bs)
+    public static bool DoesIntersect(GeoLine a, IEnumerable<GeoLine> bs)
     {
       foreach (var geoLine in bs)
       {
@@ -75,7 +75,7 @@ namespace GeoViz
       return false;
     }
     
-    public static bool DoesIntersect<T>(GeoTriangle<T> a, GeoTriangle<T> b)
+    public static bool DoesIntersect(GeoTriangle a, GeoTriangle b)
     {
       foreach (var aLine in a.Lines)
       {
@@ -87,7 +87,7 @@ namespace GeoViz
       return false;
     }
     
-    public static bool DoesIntersect<T>(List<GeoTriangle<T>> polygons, GeoTriangle<T> a)
+    public static bool DoesIntersect<T>(List<GeoTriangle> polygons, GeoTriangle a)
     {
       foreach (var polygon in polygons)
       {
@@ -96,9 +96,9 @@ namespace GeoViz
       return false;
     }
     
-    public static GeoPoint<A> Rotate<A>(GeoPoint<A> a, float angle)
+    public static GeoPoint Rotate(GeoPoint a, float angle)
     {
-      return new GeoPoint<A>(
+      return new GeoPoint(
         a.x * MathF.Cos(angle) - a.y * MathF.Sin(angle),
         a.x * MathF.Sin(angle) + a.y * MathF.Cos(angle),
         default
@@ -133,11 +133,11 @@ namespace GeoViz
     //   return polygon;
     // }
 
-    public static IEnumerable<GeoTriangle<T>> Triangulate<T>(IEnumerable<GeoPoint<T>> geoPoints)
+    public static IEnumerable<GeoTriangle> Triangulate(IEnumerable<GeoPoint> geoPoints)
     {
       var points = geoPoints.ToList();
       if (points.Count < 3) return null;
-      if (points.Count == 3) return new List<GeoTriangle<T>> { new(points[0], points[1], points[2]) };
+      if (points.Count == 3) return new List<GeoTriangle> { new(points[0], points[1], points[2]) };
       
       var xMin = points.First().x;
       var xMax = xMin;
@@ -157,13 +157,13 @@ namespace GeoViz
       var xMid = (xMin + xMax) / 2f;
       var yMid = (yMin + yMax) / 2f;
 
-      var p0 = new GeoPoint<T>(xMid - 20 * dMax, yMid - dMax, default);
-      var p1 = new GeoPoint<T>(xMid, yMid + 20 * dMax, default);
-      var p2 = new GeoPoint<T>(xMid + 20 * dMax, yMid - dMax, default);
-      var geoPointsSuperTriangle = new List<GeoPoint<T>> { p0, p1, p2 };
-      var initialTriangles = new List<GeoTriangle<T>> { new(p0, p1, p2) };
+      var p0 = new GeoPoint(xMid - 20 * dMax, yMid - dMax, default);
+      var p1 = new GeoPoint(xMid, yMid + 20 * dMax, default);
+      var p2 = new GeoPoint(xMid + 20 * dMax, yMid - dMax, default);
+      var geoPointsSuperTriangle = new List<GeoPoint> { p0, p1, p2 };
+      var initialTriangles = new List<GeoTriangle> { new(p0, p1, p2) };
 
-      var triangulation = new HashSet<GeoTriangle<T>>(initialTriangles);
+      var triangulation = new HashSet<GeoTriangle>(initialTriangles);
       foreach (var point in points)
       {
         var invalidTriangles = FindTrianglesWhereCircumcircleOverlapsPoint(triangulation, point);
@@ -174,9 +174,9 @@ namespace GeoViz
         triangulation.RemoveWhere(t => invalidTriangles.Contains(t));
         
         var polygon = FindTrianglesBoundaryEdges(invalidTriangles);
-        foreach (var line in polygon.Where(possibleEdge => possibleEdge.a != point && possibleEdge.b != point))
+        foreach (var line in polygon.Where(possibleEdge => !possibleEdge.a.Equals(point) && !possibleEdge.b.Equals(point)))
         {
-          var triangle = new GeoTriangle<T>(point, line.a, line.b);
+          var triangle = new GeoTriangle(point, line.a, line.b);
           triangulation.Add(triangle);
         }
       }
@@ -200,14 +200,14 @@ namespace GeoViz
       return triangulation;
     }
 
-    public static IEnumerable<GeoLine<A>> FindTrianglesBoundaryEdges<A>(IEnumerable<GeoTriangle<A>> triangles)
+    public static IEnumerable<GeoLine> FindTrianglesBoundaryEdges(IEnumerable<GeoTriangle> triangles)
     {
-      var edges = new List<GeoLine<A>>();
+      var edges = new List<GeoLine>();
       foreach (var triangle in triangles)
       {
-        edges.Add(new GeoLine<A>(triangle.a, triangle.b, default));
-        edges.Add(new GeoLine<A>(triangle.b, triangle.c, default));
-        edges.Add(new GeoLine<A>(triangle.c, triangle.a, default));
+        edges.Add(new GeoLine(triangle.a, triangle.b, default));
+        edges.Add(new GeoLine(triangle.b, triangle.c, default));
+        edges.Add(new GeoLine(triangle.c, triangle.a, default));
       }
       var boundaryEdges = edges.GroupBy(e => e)
                                .Where(group => group.Count() == 1)
@@ -215,12 +215,12 @@ namespace GeoViz
       return boundaryEdges;
     }
 
-    private static ISet<GeoTriangle<A>> FindTrianglesWhereCircumcircleOverlapsPoint<A, B>(IEnumerable<GeoTriangle<A>> triangles, GeoPoint<B> geoPoint)
+    private static ISet<GeoTriangle> FindTrianglesWhereCircumcircleOverlapsPoint(IEnumerable<GeoTriangle> triangles, GeoPoint geoPoint)
     {
       return triangles.Where(t => t.IsPointInsideCircumcircle(geoPoint)).ToHashSet();
     }
     
-    public static bool IsPointInTriangle<A, B>(GeoTriangle<A> geoTriangle, GeoPoint<B> p)
+    public static bool IsPointInTriangle<A>(GeoTriangle geoTriangle, GeoPoint p)
     {
       var p0 = geoTriangle.a;
       var p1 = geoTriangle.b;
@@ -232,14 +232,14 @@ namespace GeoViz
       return d == 0 || (d < 0) == (s + t <= 0);
     }
 
-    public static float Distance<A, B>(GeoPoint<A> a, GeoPoint<B> b)
+    public static float Distance(GeoPoint a, GeoPoint b)
     {
       var dx = a.x - b.x;
       var dy = a.y - b.y;
       return MathF.Sqrt(dx * dx +dy * dy);
     }
 
-    public static GeoMesh<T> Merge<T>(GeoMesh<T> a, GeoMesh<T> b)
+    public static GeoMesh Merge(GeoMesh a, GeoMesh b)
     {
       var aClone = a.Clone();
       var bClone = b.Clone();
